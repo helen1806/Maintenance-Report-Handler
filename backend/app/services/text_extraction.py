@@ -1,0 +1,37 @@
+from pathlib import Path
+from fastapi import UploadFile
+import pymupdf
+import pymupdf4llm
+import llm_extraction
+
+
+async def text_extraction(file: UploadFile) -> str:
+
+    extension = Path(file.filename).suffix.lower()
+
+    if extension == ".pdf":
+        return await extract_pdf(file)
+
+    # elif extension == ".docx":
+    #     return await extract_docx(file)
+
+    # elif extension == ".txt":
+    #     return await extract_txt(file)
+
+    # elif extension == ".csv":
+    #     return await extract_csv(file)
+
+    else:
+        raise ValueError(f"Unsupported file type: {extension}")
+
+async def extract_pdf(file: UploadFile):
+    pdf_bytes = await file.read() ##read the bytes and upload
+
+    doc = pymupdf.open(
+        stream=pdf_bytes,
+        filetype="pdf"
+    )
+
+    text = pymupdf4llm.to_markdown(doc)
+
+    return text
