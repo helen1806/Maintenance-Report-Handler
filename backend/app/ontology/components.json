@@ -1,0 +1,41 @@
+{
+  "Motor": "Motor",
+  "Electric Motor": "Motor",
+
+  "Bearing": "Bearing",
+  "Bearings": "Bearing",
+
+  "Valve": "Valve",
+  "Chilled Water Valve": "Chilled Water Valve",
+  "Control Valve": "Control Valve",
+
+  "Compressor": "Compressor",
+
+  "Fan": "Fan",
+  "Blower": "Fan",
+
+  "Filter": "Filter",
+  "Air Filter": "Air Filter",
+
+  "Coil": "Cooling Coil",
+  "Cooling Coil": "Cooling Coil",
+
+  "Heat Exchanger": "Heat Exchanger",
+
+  "Belt": "Drive Belt",
+  "Drive Belt": "Drive Belt",
+
+  "Pulley": "Pulley",
+
+  "Pump Seal": "Mechanical Seal",
+
+  "Sensor": "Sensor",
+  "Temperature Sensor": "Temperature Sensor",
+  "Pressure Sensor": "Pressure Sensor",
+
+  "Relay": "Relay",
+  "Fuse": "Fuse",
+
+  "Control Board": "Control Board",
+  "PCB": "Control Board"
+}

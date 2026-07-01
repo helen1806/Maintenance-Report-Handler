@@ -1,0 +1,19 @@
+{
+  "Low": "Low",
+
+  "Minor": "Low",
+
+  "Medium": "Medium",
+
+  "Moderate": "Medium",
+
+  "High": "High",
+
+  "Major": "High",
+
+  "Critical": "Critical",
+
+  "Severe": "Critical",
+
+  "Emergency": "Critical"
+}

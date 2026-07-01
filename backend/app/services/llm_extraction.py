@@ -1,10 +1,7 @@
 from pathlib import Path
 
-from openai import AsyncOpenAI
-
 from app.models.maintenance_schema import MaintenanceExtraction
-
-client = AsyncOpenAI()
+from app.config import client
 
 
 async def llm_extractor(document_text: str):
@@ -17,10 +14,14 @@ async def llm_extractor(document_text: str):
     prompt = prompt.replace("{document_text}", document_text) ##takes in the prompt
 
     # Send prompt + schema to the LLM
-    response = await client.responses.parse(
-        model="gpt-5.5",
-        input=prompt,
-        text_format=MaintenanceExtraction
+    response = await client.aio.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+        config={
+            "response_mime_type": "application/json",
+            "response_schema": MaintenanceExtraction,
+        }
     )
 
-    return response.output_parsed
+    return response.parsed
+    

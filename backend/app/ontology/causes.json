@@ -1,0 +1,29 @@
+{
+  "Corrosion": "Corrosion",
+  "Rust": "Corrosion",
+  "Oxidation": "Corrosion",
+
+  "Poor Lubrication": "Poor Lubrication",
+
+  "Wear": "Wear and Tear",
+  "Wear and Tear": "Wear and Tear",
+
+  "Aging": "Equipment Aging",
+
+  "Dust": "Dust Accumulation",
+  "Dust Build-up": "Dust Accumulation",
+
+  "Improper Installation": "Improper Installation",
+
+  "Loose Wiring": "Loose Electrical Connection",
+
+  "Power Surge": "Power Surge",
+
+  "High Temperature": "Overheating",
+
+  "Water Ingress": "Water Ingress",
+
+  "Operator Error": "Human Error",
+
+  "Fatigue": "Material Fatigue"
+}

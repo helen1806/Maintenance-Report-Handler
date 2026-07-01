@@ -1,0 +1,51 @@
+{
+  "AHU": "Air Handling Unit",
+  "Air Handler": "Air Handling Unit",
+  "Air Handling Unit": "Air Handling Unit",
+
+  "FCU": "Fan Coil Unit",
+  "Fan Coil": "Fan Coil Unit",
+  "Fan Coil Unit": "Fan Coil Unit",
+
+  "RTU": "Rooftop Unit",
+  "Rooftop Unit": "Rooftop Unit",
+
+  "Chiller": "Chiller",
+  "Cooling Tower": "Cooling Tower",
+
+  "Pump": "Pump",
+  "Water Pump": "Pump",
+  "Chilled Water Pump": "Pump",
+  "Booster Pump": "Pump",
+
+  "Exhaust Fan": "Exhaust Fan",
+  "Supply Fan": "Supply Fan",
+
+  "Generator": "Generator",
+  "DG Set": "Generator",
+
+  "UPS": "Uninterruptible Power Supply",
+  "Backup Power Unit": "Uninterruptible Power Supply",
+  "Uninterruptible Power Supply": "Uninterruptible Power Supply",
+
+  "Transformer": "Transformer",
+  "Circuit Breaker": "Circuit Breaker",
+  "Breaker": "Circuit Breaker",
+  "Switchgear": "Switchgear",
+
+  "Valve": "Valve",
+  "Pipe": "Pipe",
+  "Water Tank": "Water Tank",
+
+  "Smoke Detector": "Smoke Detector",
+  "Fire Alarm": "Fire Alarm Panel",
+  "Fire Alarm Panel": "Fire Alarm Panel",
+  "Sprinkler": "Sprinkler",
+
+  "Elevator": "Elevator",
+  "Lift": "Elevator",
+
+  "Lighting Fixture": "Lighting Fixture",
+  "LED Light": "Lighting Fixture",
+  "Emergency Light": "Emergency Lighting"
+}

@@ -1,0 +1,38 @@
+{
+  "Corrosion": "Corrosion",
+  "Rust": "Corrosion",
+
+  "Mechanical Jam": "Mechanical Jamming",
+  "Valve Jam": "Mechanical Jamming",
+  "Valve Stuck": "Mechanical Jamming",
+  "Jammed": "Mechanical Jamming",
+
+  "Bearing Failure": "Bearing Failure",
+  "Bearing Wear": "Bearing Failure",
+
+  "Leak": "Leakage",
+  "Water Leak": "Leakage",
+
+  "Overheating": "Overheating",
+
+  "Electrical Fault": "Electrical Failure",
+  "Electrical Failure": "Electrical Failure",
+
+  "Short Circuit": "Short Circuit",
+
+  "Motor Burnout": "Motor Failure",
+
+  "Sensor Failure": "Sensor Failure",
+
+  "Low Pressure": "Low Pressure",
+
+  "High Pressure": "High Pressure",
+
+  "Clogging": "Blockage",
+
+  "Blocked": "Blockage",
+
+  "Loose Connection": "Loose Electrical Connection",
+
+  "Vibration": "Excessive Vibration"
+}

@@ -2,7 +2,7 @@ from pathlib import Path
 from fastapi import UploadFile
 import pymupdf
 import pymupdf4llm
-import llm_extraction
+from app.services.llm_extraction import llm_extractor
 
 
 async def text_extraction(file: UploadFile) -> str:
