@@ -5,8 +5,9 @@ from contextlib import asynccontextmanager
 
 from app.services.text_extraction import text_extraction
 from app.services.llm_extraction import llm_extractor
+from app.services.graph_builder import GraphBuilder
 from app.services.ontology_mapper import JSONOntologyProvider, OntologyMapper
-from dotenv import load_dotenv, find_dotenv
+from dotenv import load_dotenv, find_dotenv 
 
 load_dotenv(find_dotenv())
 
@@ -32,6 +33,9 @@ async def process_single_file(file: UploadFile):
     text = await text_extraction(file)
     structured_data = await llm_extractor(text)
     standardized_data = mapper.map_extraction(structured_data)
+    graph_received=GraphBuilder.build_graph(standardized_data)
+    
+
     return standardized_data
 
 @app.post("/upload")
