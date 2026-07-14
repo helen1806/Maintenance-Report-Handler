@@ -12,15 +12,6 @@ async def text_extraction(file: UploadFile) -> str:
     if extension == ".pdf":
         return await extract_pdf(file)
 
-    # elif extension == ".docx":
-    #     return await extract_docx(file)
-
-    # elif extension == ".txt":
-    #     return await extract_txt(file)
-
-    # elif extension == ".csv":
-    #     return await extract_csv(file)
-
     else:
         raise ValueError(f"Unsupported file type: {extension}")
 

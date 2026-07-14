@@ -56,3 +56,9 @@ htmlcov/
 # ==========================
 uploads/
 temp/
+
+# ==========================
+# User ignored folders
+# ==========================
+exceptions/
+database/
