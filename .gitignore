@@ -62,3 +62,31 @@ temp/
 # ==========================
 exceptions/
 database/
+
+
+# ==========================
+# Frontend (Next.js)
+# ==========================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Package Managers
+frontend/.pnp
+frontend/.pnp.*
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+
+# Coverage
+frontend/coverage/
+
+# Vercel
+frontend/.vercel/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

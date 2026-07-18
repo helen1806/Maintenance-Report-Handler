@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from app.models import MaintenanceExtraction
+from app.models.maintenance_schema import MaintenanceExtraction
 
 
 # ==========================
@@ -27,9 +27,6 @@ class Graph:
     relationships: List[Relationship] = field(default_factory=list)
 
 
-# ==========================
-# Graph Builder
-# ==========================
 
 class GraphBuilder:
 
@@ -37,7 +34,7 @@ class GraphBuilder:
 
         graph = Graph()
 
-        # ---------- Nodes ----------
+      
 
         graph.nodes.append(self._build_asset_type(extraction.asset_type))
         graph.nodes.append(self._build_component(extraction.component))
@@ -45,19 +42,15 @@ class GraphBuilder:
         graph.nodes.append(self._build_root_cause(extraction.root_cause))
         graph.nodes.append(self._build_maintenance_action(extraction.maintenance_action))
 
-        # These values will be populated later.
+       
         graph.nodes.append(self._build_maintenance_report())
         graph.nodes.append(self._build_maintenance_case())
 
-        # ---------- Relationships ----------
+     
 
         graph.relationships.extend(self._build_relationships())
 
         return graph
-
-    # ==========================
-    # Node Builders
-    # ==========================
 
     def _build_asset_type(self, asset_type: str) -> Node:
 
@@ -109,9 +102,9 @@ class GraphBuilder:
         return Node(
             label="MaintenanceReport",
             properties={
-                "report_id": None,
-                "file_name": None,
-                "file_url": None
+                "report_id": "UNKNOWN_ID",
+                "file_name": "UNKNOWN_FILE",
+                "file_url": "UNKNOWN_URL"
             }
         )
 
@@ -120,8 +113,8 @@ class GraphBuilder:
         return Node(
             label="MaintenanceCase",
             properties={
-                "case_id": None,
-                "complaint_text": None
+                "case_id": "UNKNOWN_CASE",
+                "complaint_text": "UNKNOWN_TEXT"
             }
         )
 
