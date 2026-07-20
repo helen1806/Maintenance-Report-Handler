@@ -1,0 +1,92 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# ==========================
+# Environment Variables
+# ==========================
+.env
+
+# ==========================
+# IDE
+# ==========================
+.vscode/
+.idea/
+
+# ==========================
+# macOS
+# ==========================
+.DS_Store
+
+# ==========================
+# Logs
+# ==========================
+*.log
+
+# ==========================
+# Build
+# ==========================
+build/
+dist/
+*.egg-info/
+
+# ==========================
+# Testing
+# ==========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================
+# Jupyter
+# ==========================
+.ipynb_checkpoints/
+
+# ==========================
+# Temporary Uploads (if you create one later)
+# ==========================
+uploads/
+temp/
+
+# ==========================
+# User ignored folders
+# ==========================
+exceptions/
+database/
+
+
+# ==========================
+# Frontend (Next.js)
+# ==========================
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Package Managers
+frontend/.pnp
+frontend/.pnp.*
+frontend/.yarn/*
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
+
+# Coverage
+frontend/coverage/
+
+# Vercel
+frontend/.vercel/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
