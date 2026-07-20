@@ -30,7 +30,8 @@ export default function ChatInterface() {
       }));
 
       // 3. Send the question and history to the backend
-      const response = await fetch("http://localhost:8000/ask", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/ask`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

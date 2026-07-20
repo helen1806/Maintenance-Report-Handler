@@ -35,7 +35,8 @@ export default function UploadFile() {
     }
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "http://localhost:8000/upload", true);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    xhr.open("POST", `${apiUrl}/upload`, true);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
