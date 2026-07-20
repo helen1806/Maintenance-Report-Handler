@@ -4,17 +4,18 @@ from typing import Dict, Any
 
 from fastapi import HTTPException
 from neo4j.exceptions import Neo4jError
-# If Google API exceptions are needed explicitly
 try:
-    from google.api_core.exceptions import GoogleAPIError
+    import openai
 except ImportError:
-    GoogleAPIError = type("DummyGoogleAPIError", (Exception,), {})
+    openai = type("DummyOpenAI", (), {"APIError": type("DummyAPIError", (Exception,), {})})
 
 from app.services.graph_chain import get_graph_qa_chain
+from app.services.context_rewriter import rewrite_question_with_context, ChatMessage
+from typing import List
 
 logger = logging.getLogger(__name__)
 
-def ask_question(question: str) -> Dict[str, Any]:
+def ask_question(question: str, history: List[ChatMessage] = None) -> Dict[str, Any]:
     """
     Executes a natural language question against the Neo4j graph using LangChain.
     Returns the final answer and conditionally raw debug info based on the DEBUG env var.
@@ -22,11 +23,18 @@ def ask_question(question: str) -> Dict[str, Any]:
     if not question or not question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
 
+    if history is None:
+        history = []
+
     try:
+        # 1. Rewrite the question based on conversational history if necessary
+        rewritten_question = rewrite_question_with_context(question, history)
+
+        # 2. Get the QA chain singleton
         chain = get_graph_qa_chain()
         
-        # Invoke the chain; we enabled return_intermediate_steps=True so we get a dict back
-        response = chain.invoke({"query": question})
+        # 3. Invoke the chain with the standalone rewritten question
+        response = chain.invoke({"query": rewritten_question})
 
         final_answer = response.get("result", "I'm sorry, I couldn't find an answer to that.")
         intermediate_steps = response.get("intermediate_steps", [])
@@ -55,9 +63,9 @@ def ask_question(question: str) -> Dict[str, Any]:
         logger.error(f"Neo4j Database Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Database connection or query execution failed.")
     
-    except GoogleAPIError as e:
-        logger.error(f"Gemini API Error: {str(e)}")
-        raise HTTPException(status_code=502, detail="Failed to communicate with the AI language model.")
+    except openai.APIError as e:
+        logger.error(f"Groq API Error: {str(e)}")
+        raise HTTPException(status_code=502, detail="Failed to communicate with the Groq AI language model.")
         
     except ValueError as e:
         # LangChain often throws ValueErrors for parsing issues or missing prompt variables

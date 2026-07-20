@@ -12,6 +12,13 @@ class Neo4jService:
         
         self.driver.close()
 
+    def report_exists(self, file_hash: str) -> bool:
+        """Checks if a MaintenanceReport with the given SHA-256 hash already exists."""
+        query = "MATCH (r:MaintenanceReport {file_hash: $file_hash}) RETURN count(r) > 0 AS exists"
+        with self.driver.session() as session:
+            result = session.run(query, file_hash=file_hash)
+            return result.single()["exists"]
+
     def save_graph(self, graph: Graph):
         """
         transaction based
@@ -43,12 +50,24 @@ class Neo4jService:
 
     def _create_relationship(self, tx, relationship: Relationship):
         """
-      
-        Assumes there is only one node of each label in the current context.
+        Creates a relationship between two exact nodes by matching on their specific properties.
         """
+        start_node = relationship.start_node
+        end_node = relationship.end_node
+
+        start_props_str = ", ".join([f"{k}: ${k}_start" for k in start_node.properties.keys()])
+        end_props_str = ", ".join([f"{k}: ${k}_end" for k in end_node.properties.keys()])
+        
         query = f"""
-        MATCH (start:{relationship.start_label})
-        MATCH (end:{relationship.end_label})
+        MATCH (start:{start_node.label} {{{start_props_str}}})
+        MATCH (end:{end_node.label} {{{end_props_str}}})
         MERGE (start)-[:{relationship.relationship_type}]->(end)
         """
-        tx.run(query)
+        
+        params = {}
+        for k, v in start_node.properties.items():
+            params[f"{k}_start"] = v
+        for k, v in end_node.properties.items():
+            params[f"{k}_end"] = v
+            
+        tx.run(query, **params)

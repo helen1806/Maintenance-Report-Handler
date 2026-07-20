@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List
 
 from app.models.maintenance_schema import MaintenanceExtraction
+import uuid
 
 
 # ==========================
@@ -16,9 +17,9 @@ class Node:
 
 @dataclass
 class Relationship:
-    start_label: str
+    start_node: Node
     relationship_type: str
-    end_label: str
+    end_node: Node
 
 
 @dataclass
@@ -30,25 +31,51 @@ class Graph:
 
 class GraphBuilder:
 
-    def build_graph(self, extraction: MaintenanceExtraction) -> Graph:
+    def build_graph(self, extraction: MaintenanceExtraction, filename: str, file_hash: str) -> Graph:
 
         graph = Graph()
-
+        report_id = str(uuid.uuid4())
+        case_id = str(uuid.uuid4())
       
+        # Core Nodes (Always created per file)
+        report_node = self._build_maintenance_report(report_id, filename, file_hash)
+        case_node = self._build_maintenance_case(case_id)
+        graph.nodes.extend([report_node, case_node])
 
-        graph.nodes.append(self._build_asset_type(extraction.asset_type))
-        graph.nodes.append(self._build_component(extraction.component))
-        graph.nodes.append(self._build_failure_mode(extraction.failure_mode))
-        graph.nodes.append(self._build_root_cause(extraction.root_cause))
-        graph.nodes.append(self._build_maintenance_action(extraction.maintenance_action))
+        # Core Relationship
+        graph.relationships.append(Relationship(
+            start_node=report_node,
+            relationship_type="DESCRIBES",
+            end_node=case_node
+        ))
 
-       
-        graph.nodes.append(self._build_maintenance_report())
-        graph.nodes.append(self._build_maintenance_case())
+        # Optional Domain Nodes
+        asset_type_node = self._build_asset_type(extraction.asset_type) if extraction.asset_type else None
+        component_node = self._build_component(extraction.component) if extraction.component else None
+        failure_mode_node = self._build_failure_mode(extraction.failure_mode) if extraction.failure_mode else None
+        root_cause_node = self._build_root_cause(extraction.root_cause) if extraction.root_cause else None
+        maintenance_action_node = self._build_maintenance_action(extraction.maintenance_action) if extraction.maintenance_action else None
 
-     
+        # Add nodes if they exist
+        for node in [asset_type_node, component_node, failure_mode_node, root_cause_node, maintenance_action_node]:
+            if node:
+                graph.nodes.append(node)
 
-        graph.relationships.extend(self._build_relationships())
+        # Build relationships conditionally
+        if case_node and asset_type_node:
+            graph.relationships.append(Relationship(case_node, "ABOUT", asset_type_node))
+        
+        if asset_type_node and component_node:
+            graph.relationships.append(Relationship(asset_type_node, "HAS", component_node))
+
+        if component_node and failure_mode_node:
+            graph.relationships.append(Relationship(component_node, "CAN_EXPERIENCE", failure_mode_node))
+
+        if failure_mode_node and root_cause_node:
+            graph.relationships.append(Relationship(failure_mode_node, "CAUSED_BY", root_cause_node))
+
+        if failure_mode_node and maintenance_action_node:
+            graph.relationships.append(Relationship(failure_mode_node, "RESOLVED_BY", maintenance_action_node))
 
         return graph
 
@@ -97,68 +124,24 @@ class GraphBuilder:
             }
         )
 
-    def _build_maintenance_report(self) -> Node:
+    def _build_maintenance_report(self, report_id: str, filename: str, file_hash: str) -> Node:
 
         return Node(
             label="MaintenanceReport",
             properties={
-                "report_id": "UNKNOWN_ID",
-                "file_name": "UNKNOWN_FILE",
+                "report_id": report_id,
+                "file_name": filename,
+                "file_hash": file_hash,
                 "file_url": "UNKNOWN_URL"
             }
         )
 
-    def _build_maintenance_case(self) -> Node:
+    def _build_maintenance_case(self, case_id: str) -> Node:
 
         return Node(
             label="MaintenanceCase",
             properties={
-                "case_id": "UNKNOWN_CASE",
+                "case_id": case_id,
                 "complaint_text": "UNKNOWN_TEXT"
             }
         )
-
-    # ==========================
-    # Relationship Builder
-    # ==========================
-
-    def _build_relationships(self) -> List[Relationship]:
-
-        return [
-
-            Relationship(
-                start_label="MaintenanceReport",
-                relationship_type="DESCRIBES",
-                end_label="MaintenanceCase"
-            ),
-
-            Relationship(
-                start_label="MaintenanceCase",
-                relationship_type="ABOUT",
-                end_label="AssetType"
-            ),
-
-            Relationship(
-                start_label="AssetType",
-                relationship_type="HAS",
-                end_label="Component"
-            ),
-
-            Relationship(
-                start_label="Component",
-                relationship_type="CAN_EXPERIENCE",
-                end_label="FailureMode"
-            ),
-
-            Relationship(
-                start_label="FailureMode",
-                relationship_type="CAUSED_BY",
-                end_label="RootCause"
-            ),
-
-            Relationship(
-                start_label="FailureMode",
-                relationship_type="RESOLVED_BY",
-                end_label="MaintenanceAction"
-            )
-        ]

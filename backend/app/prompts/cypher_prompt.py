@@ -5,6 +5,10 @@ CYPHER_GENERATION_TEMPLATE = """Task: Generate Cypher statement to query a graph
 Instructions:
 Use only the provided relationship types and properties in the schema.
 Do not use any other relationship types or properties that are not provided.
+CRITICAL STRING MATCHING RULES:
+1. NEVER use exact string matching (e.g., `{{name: "..."}}`).
+2. ALWAYS use case-insensitive substring matching: `WHERE toLower(node.name) CONTAINS toLower("...")`.
+3. Extract ONLY the core noun from the question. Remove articles ("a", "an", "the"). If the question says "a bearing wear", search for "bearing wear".
 
 IMPORTANT ONTOLOGY SEMANTICS:
 You MUST follow these exact directional relationships:
@@ -27,7 +31,7 @@ Here are some examples of correctly mapping questions to Cypher using this exact
 
 # 1. Single-hop traversal
 # Question: What is the maintenance case described by report ID "RPT-100"?
-# Explanation: We start at MaintenanceReport with the given ID and follow DESCRIBES to MaintenanceCase.
+# Explanation: We start at MaintenanceReport with the given ID and follow DESCRIBES to MaintenanceCase. We can use exact match for IDs.
 # Cypher:
 MATCH (r:MaintenanceReport {{report_id: "RPT-100"}})-[:DESCRIBES]->(c:MaintenanceCase)
 RETURN c
@@ -36,42 +40,48 @@ RETURN c
 # Question: What failure modes were found on the Air Handling Unit?
 # Explanation: We start at AssetType, follow HAS to Component, and CAN_EXPERIENCE to FailureMode.
 # Cypher:
-MATCH (a:AssetType {{name: "Air Handling Unit"}})-[:HAS]->(c:Component)-[:CAN_EXPERIENCE]->(f:FailureMode)
+MATCH (a:AssetType)-[:HAS]->(c:Component)-[:CAN_EXPERIENCE]->(f:FailureMode)
+WHERE toLower(a.name) CONTAINS toLower("air handling unit")
 RETURN f.name
 
 # 3. Reverse relationship traversal
 # Question: Which components can experience a "Bearing Failure"?
 # Explanation: We start at FailureMode and traverse backward along CAN_EXPERIENCE to find the Component.
 # Cypher:
-MATCH (c:Component)-[:CAN_EXPERIENCE]->(f:FailureMode {{name: "Bearing Failure"}})
+MATCH (c:Component)-[:CAN_EXPERIENCE]->(f:FailureMode)
+WHERE toLower(f.name) CONTAINS toLower("bearing failure")
 RETURN c.name
 
 # 4. Root cause lookup
 # Question: What caused the "Vibration" failure mode?
 # Explanation: We match the FailureMode and follow the PROVIDED direction of CAUSED_BY to the RootCause.
 # Cypher:
-MATCH (f:FailureMode {{name: "Vibration"}})-[:CAUSED_BY]->(r:RootCause)
+MATCH (f:FailureMode)-[:CAUSED_BY]->(r:RootCause)
+WHERE toLower(f.name) CONTAINS toLower("vibration")
 RETURN r.name
 
 # 5. Maintenance action lookup
 # Question: How do we fix a "Refrigerant Leak"?
 # Explanation: We match the FailureMode and follow RESOLVED_BY to the MaintenanceAction.
 # Cypher:
-MATCH (f:FailureMode {{name: "Refrigerant Leak"}})-[:RESOLVED_BY]->(m:MaintenanceAction)
+MATCH (f:FailureMode)-[:RESOLVED_BY]->(m:MaintenanceAction)
+WHERE toLower(f.name) CONTAINS toLower("refrigerant leak")
 RETURN m.name
 
 # 6. Component lookup
 # Question: List all components of a Chiller.
 # Explanation: We match AssetType "Chiller" and follow HAS to Component.
 # Cypher:
-MATCH (a:AssetType {{name: "Chiller"}})-[:HAS]->(c:Component)
+MATCH (a:AssetType)-[:HAS]->(c:Component)
+WHERE toLower(a.name) CONTAINS toLower("chiller")
 RETURN c.name
 
 # 7. Asset type lookup
 # Question: Which assets have a "Compressor" component?
 # Explanation: We traverse backward from Component "Compressor" via HAS to AssetType.
 # Cypher:
-MATCH (a:AssetType)-[:HAS]->(c:Component {{name: "Compressor"}})
+MATCH (a:AssetType)-[:HAS]->(c:Component)
+WHERE toLower(c.name) CONTAINS toLower("compressor")
 RETURN a.name
 
 # 8. Maintenance report summarization
@@ -85,14 +95,16 @@ RETURN c.complaint_text
 # Question: Show me the problems with the boiler.
 # Explanation: "Problems" maps to FailureMode, and "boiler" maps to AssetType. We must traverse AssetType -> Component -> FailureMode.
 # Cypher:
-MATCH (a:AssetType {{name: "Boiler"}})-[:HAS]->(c:Component)-[:CAN_EXPERIENCE]->(f:FailureMode)
+MATCH (a:AssetType)-[:HAS]->(c:Component)-[:CAN_EXPERIENCE]->(f:FailureMode)
+WHERE toLower(a.name) CONTAINS toLower("boiler")
 RETURN f.name
 
 # 10. Synonym-based questions
 # Question: What is the solution for "Sensor Malfunction"?
 # Explanation: "Solution" maps to MaintenanceAction, which is RESOLVED_BY from FailureMode.
 # Cypher:
-MATCH (f:FailureMode {{name: "Sensor Malfunction"}})-[:RESOLVED_BY]->(m:MaintenanceAction)
+MATCH (f:FailureMode)-[:RESOLVED_BY]->(m:MaintenanceAction)
+WHERE toLower(f.name) CONTAINS toLower("sensor malfunction")
 RETURN m.name
 
 Schema:

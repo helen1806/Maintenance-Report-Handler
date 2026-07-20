@@ -1,10 +1,10 @@
 from dotenv import load_dotenv, find_dotenv
-from google import genai
+from openai import AsyncOpenAI
 import os
 
 load_dotenv(find_dotenv())
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+client = AsyncOpenAI(api_key=os.environ.get("GROQ_API_KEY"), base_url="https://api.groq.com/openai/v1")
 
 DATABASE_URI = os.getenv("DATABASE_URI")
 DATABASE_USERNAME = os.getenv("DATABASE_USERNAME")

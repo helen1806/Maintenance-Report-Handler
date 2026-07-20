@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from app.models.maintenance_schema import MaintenanceExtraction
@@ -12,15 +13,17 @@ async def llm_extractor(document_text: str):
     # Insert the extracted document
     prompt = prompt.replace("{document_text}", document_text) 
 
-    # Send prompt + schema to the LLM
-    response = await client.aio.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config={
-            "response_mime_type": "application/json",
-            "response_schema": MaintenanceExtraction,
-        }
+    # Ensure the prompt asks for JSON and provide the exact schema
+    schema_str = json.dumps(MaintenanceExtraction.model_json_schema(), indent=2)
+    prompt = prompt + f"\n\nRespond ONLY with a valid JSON object matching exactly this JSON Schema:\n{schema_str}"
+
+    # Send prompt to Groq via OpenAI compatible API
+    response = await client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"}
     )
 
-    return response.parsed
+    content = response.choices[0].message.content
+    return MaintenanceExtraction.model_validate_json(content)
     
