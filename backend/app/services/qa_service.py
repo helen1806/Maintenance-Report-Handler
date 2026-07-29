@@ -4,6 +4,8 @@ from typing import Dict, Any
 
 from fastapi import HTTPException
 from neo4j.exceptions import Neo4jError
+from app.services.router.classifier import classify
+
 try:
     import openai
 except ImportError:
@@ -30,7 +32,33 @@ def ask_question(question: str, history: List[ChatMessage] = None) -> Dict[str, 
         # 1. Rewrite the question based on conversational history if necessary
         rewritten_question = rewrite_question_with_context(question, history)
 
-        # 2. Get the QA chain singleton
+        # 1.5 Classify the intent of the question
+        route_name = classify(rewritten_question)
+        logger.info(f"Question routed to: {route_name}")
+
+        # Handle the non-database routes immediately to save time and API costs!
+        if route_name in ["ChitChat", "General"]:
+            from langchain_openai import ChatOpenAI
+            
+            llm = ChatOpenAI(
+                model="llama-3.3-70b-versatile",
+                api_key=os.getenv("GROQ_API_KEY"),
+                base_url="https://api.groq.com/openai/v1",
+                temperature=0.5
+            )
+            
+            if route_name == "ChitChat":
+                prompt = f"You are a friendly AI assistant for a maintenance application. Briefly respond to this conversational user message: '{rewritten_question}'"
+            else:
+                prompt = f"You are a helpful AI assistant. Concisely answer this general knowledge question: '{rewritten_question}'"
+                
+            response = llm.invoke(prompt)
+            return {"answer": response.content}
+            
+        elif route_name == "Help":
+            return {"answer": "I can help you analyze maintenance reports, find connected assets, and identify causes of equipment failure! Try asking me to show reports for a specific pump."}
+        
+        # 2. If route_name == "Graph" (or anything else), proceed to query Neo4j
         chain = get_graph_qa_chain()
         
         # 3. Invoke the chain with the standalone rewritten question
