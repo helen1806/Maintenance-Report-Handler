@@ -31,5 +31,5 @@ if __name__ == "__main__":
 
     for q in test_questions:
         # Calling the router with a string returns a Route object
-        result = route_layer(q)
+        result = get_route_layer()(q)
         print(f"Question: '{q}'\nRouted to: -> [{result.name}]\n")
