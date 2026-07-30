@@ -3,6 +3,7 @@ import logging
 from typing import Dict, Any
 
 from fastapi import HTTPException
+from langchain_openai import ChatOpenAI
 from neo4j.exceptions import Neo4jError
 from app.services.router.classifier import classify
 
@@ -38,7 +39,7 @@ def ask_question(question: str, history: List[ChatMessage] = None) -> Dict[str, 
 
         # Handle the non-database routes immediately to save time and API costs!
         if route_name in ["ChitChat", "General"]:
-            from langchain_openai import ChatOpenAI
+            
             
             llm = ChatOpenAI(
                 model="llama-3.3-70b-versatile",
