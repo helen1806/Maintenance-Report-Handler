@@ -1,19 +1,16 @@
-from app.services.router.encoder import get_encoder
-from app.services.router.routers import chitchat, general, graph, help_route
-from semantic_router import SemanticRouter
-
-# Combine all routes into a list
-routes = [general, chitchat, help_route, graph]
-
 _route_layer_instance = None
 
-def get_route_layer() -> SemanticRouter:
+def get_route_layer():
     global _route_layer_instance
     if _route_layer_instance is None:
+        from app.services.router.encoder import get_encoder
+        from app.services.router.routers import get_routes
+        from semantic_router import SemanticRouter
+        
         print("Initializing Semantic Router (lazy load)...")
         _route_layer_instance = SemanticRouter(
             encoder=get_encoder(),
-            routes=routes,
+            routes=get_routes(),
             auto_sync="local"
         )
     return _route_layer_instance
