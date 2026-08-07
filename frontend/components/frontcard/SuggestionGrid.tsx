@@ -2,9 +2,9 @@ import SuggestionCard from "./SuggestionCard";
 
 const suggestions = [
   "What caused the pump failure?",
-  "Summarize this report.",
+  "Summarize the maintenance cases.",
   "Which asset has recurring issues?",
-  "Draft a work order for the highest-priority item.",
+  "How can the bearing wear be resolved",
 ];
 
 interface SuggestionGridProps {
