@@ -17,6 +17,11 @@ REWRITE_PROMPT = """You are an AI assistant helping to rewrite user questions ba
 Your only job is to rewrite the follow-up question so it becomes a standalone question that can be understood without the context.
 DO NOT answer the question. ONLY return the rewritten question.
 
+CRITICAL INSTRUCTIONS:
+1. If the user's follow-up question is a greeting (e.g., "hello", "hi") or pleasantry, DO NOT rewrite it. Return it exactly as it is.
+2. If the user's follow-up question introduces a NEW topic or asks a broad/general question (e.g., "summarize all cases", "what details do you know"), DO NOT merge it with the previous context. Return it exactly as it is.
+3. ONLY rewrite the question if it contains pronouns (it, that, them) or ambiguous references (the pump, the issue) that require the conversation history to make sense.
+
 Conversation History:
 {history_text}
 

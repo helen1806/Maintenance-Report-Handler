@@ -28,7 +28,7 @@ export default function InputText({ onSend, disabled = false }: InputTextProps) 
           onChange={(e) => setText(e.target.value)}
           disabled={disabled}
           placeholder="Ask about your maintenance reports..."
-          className="flex-1 bg-transparent placeholder:italic placeholder:text-gray-500 focus:outline-none disabled:opacity-50"
+          className="flex-1 bg-transparent text-gray-900 placeholder:italic placeholder:text-gray-500 focus:outline-none disabled:opacity-50"
         />
 
         <button
