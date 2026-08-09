@@ -11,8 +11,8 @@ export default function Dashboard() {
     useEffect(() => {
         // Fetch data from our new FastAPI Intelligence Endpoints
         Promise.all([
-            fetch("http://localhost:8000/api/intelligence/analytics/patterns").then(res => res.json()),
-            fetch("http://localhost:8000/api/intelligence/analytics/reliability").then(res => res.json())
+            fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/intelligence/analytics/patterns`).then(res => res.json()),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/intelligence/analytics/reliability`).then(res => res.json())
         ]).then(([patternData, scoreData]) => {
             setPatterns(patternData.patterns);
             setScores(scoreData.scores);
