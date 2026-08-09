@@ -8,6 +8,10 @@ import hashlib
 import asyncio
 import time
 from contextlib import asynccontextmanager
+from app.services.intelligence.similarity_engine import SimilarityEngine
+from app.services.intelligence.analytics_engine import AnalyticsEngine
+from celery.result import AsyncResult
+from fastapi.responses import StreamingResponse
 
 from app.services.text_extraction import text_extraction
 from app.services.llm_extraction import llm_extractor
@@ -16,6 +20,8 @@ from app.services.neo4jservice import Neo4jService
 from app.services.qa_service import ask_question
 from app.services.graph_chain import mark_graph_changed
 from app.services.ontology_mapper import JSONOntologyProvider, OntologyMapper
+from app.services.worker_tasks import process_maintenance_report
+
 from dotenv import load_dotenv, find_dotenv 
 
 load_dotenv(find_dotenv())
@@ -48,64 +54,39 @@ app.add_middleware(
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB limit
 
 async def process_single_file(file: UploadFile, semaphore: asyncio.Semaphore):
-    start_time = time.time()
     async with semaphore:
         try:
-            print(file.filename) 
-            
             if not file.filename.lower().endswith(".pdf"):
-                return {"filename": file.filename, "status": "failed", "error": "Invalid file type. Only PDFs are accepted."}
+                return {"filename": file.filename, "status": "failed", "error": "Invalid file type."}
             
             file_bytes = await file.read()
-            
-            if len(file_bytes) > MAX_FILE_SIZE_BYTES:
-                return {"filename": file.filename, "status": "failed", "error": f"File size exceeds the {MAX_FILE_SIZE_BYTES // (1024 * 1024)}MB limit."}
-                
             file_hash = hashlib.sha256(file_bytes).hexdigest()
-            await file.seek(0)
             
-            neo4j_service = Neo4jService()
-            # Offload blocking network call
-            exists = await asyncio.to_thread(neo4j_service.report_exists, file_hash)
-            if exists:
-                return {"filename": file.filename, "status": "skipped", "message": "File already uploaded"}
-
-            text = await text_extraction(file)
-            structured_data = await llm_extractor(text)
-            standardized_data = mapper.map_extraction(structured_data)
-            graph = GraphBuilder().build_graph(standardized_data, file.filename, file_hash)
+            # Save the file temporarily so the background worker can read it
+            temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp_uploads")
+            os.makedirs(temp_dir, exist_ok=True)
             
-            # Offload blocking network call
-            await asyncio.to_thread(neo4j_service.save_graph, graph)
+            temp_file_path = os.path.join(temp_dir, f"{file_hash}.pdf")
+            with open(temp_file_path, "wb") as f:
+                f.write(file_bytes)
+                
+            # Dispatch the background task!
+            task = process_maintenance_report.delay(
+                file_path=temp_file_path,
+                filename=file.filename,
+                file_hash=file_hash
+            )
             
-            end_time = time.time()
-            processing_time = round(end_time - start_time, 2)
-            
-            report_node = next((n for n in graph.nodes if n.label == "MaintenanceReport"), None)
-            report_id = report_node.properties.get("report_id") if report_node else None
-            
-            extracted_entities_count = sum(1 for v in standardized_data.dict().values() if v is not None)
-            
-            metadata = {
-                "report_id": report_id,
-                "filename": file.filename,
-                "extracted_entities_count": extracted_entities_count,
-                "graph_statistics": {
-                    "nodes_created": len(graph.nodes),
-                    "relationships_created": len(graph.relationships)
-                },
-                "processing_time_seconds": processing_time
-            }
-
             return {
                 "filename": file.filename, 
-                "status": "success", 
-                "data": standardized_data.dict(), 
-                "metadata": metadata
+                "status": "queued", 
+                "job_id": task.id
             }
+
         except Exception as e:
-            print(f"Error processing {file.filename}: {e}")
+            print(f"Error queuing {file.filename}: {e}")
             return {"filename": file.filename, "status": "failed", "error": str(e)}
+
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
@@ -143,32 +124,67 @@ async def ask_graph_question(request: AskRequest):
                 "details": str(e)
             }
         )
-
 @app.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
-
-    # Limit concurrent extractions to 3 to prevent LLM API rate limits and memory spikes
-    semaphore = asyncio.Semaphore(3)
+    # We can increase the semaphore since queuing is instant!
+    semaphore = asyncio.Semaphore(10) 
 
     tasks = [process_single_file(file, semaphore) for file in files]
     results = await asyncio.gather(*tasks)
     
-    successful = [r for r in results if r["status"] == "success"]
+    queued = [r for r in results if r["status"] == "queued"]
     failed = [r for r in results if r["status"] == "failed"]
-    skipped = [r for r in results if r["status"] == "skipped"]
     
-    if len(successful) > 0:
-        mark_graph_changed()
-
     return {
         "message": "File processing complete",
         "summary": {
             "total": len(files),
-            "successful": len(successful),
+            "successful": len(queued), # We map queued to successful so the React frontend doesn't break yet!
             "failed": len(failed),
-            "skipped": len(skipped)
+            "skipped": 0
         },
-        "successful": successful,
-        "failed": failed,
-        "skipped": skipped
+        "jobs": results
     }
+# --- Intelligence Layer Endpoints ---
+
+class SimilarityRequest(BaseModel):
+    failure_text: str
+    top_k: int = 3
+
+@app.post("/api/intelligence/similarity")
+def get_similar_failures(request: SimilarityRequest):
+    engine = SimilarityEngine()
+    results = engine.search_similar_failures(request.failure_text, request.top_k)
+    return {"results": results}
+
+@app.get("/api/intelligence/analytics/patterns")
+def get_failure_patterns():
+    engine = AnalyticsEngine()
+    return {"patterns": engine.get_asset_failure_patterns()}
+
+@app.get("/api/intelligence/analytics/reliability")
+def get_reliability_scores():
+    engine = AnalyticsEngine()
+    return {"scores": engine.get_asset_reliability_scores()}
+@app.get("/api/jobs/{job_id}/status")
+async def job_status_stream(job_id: str):
+    """
+    Server-Sent Events (SSE) endpoint to stream real-time Celery job status.
+    """
+    async def event_generator():
+        while True:
+            # Check the status of the background task
+            task = AsyncResult(job_id)
+            state = task.state
+            
+            # SSE protocol requires sending data in this exact format: "data: {...}\n\n"
+            yield f"data: {{\"status\": \"{state}\", \"job_id\": \"{job_id}\"}}\n\n"
+            
+            # Stop streaming if the task is finished
+            if state in ["SUCCESS", "FAILURE", "REVOKED"]:
+                break
+                
+            # Wait 1 second before checking again
+            await asyncio.sleep(1)
+            
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

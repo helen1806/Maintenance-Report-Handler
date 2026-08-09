@@ -3,23 +3,19 @@ from abc import ABC, abstractmethod
 from typing import Dict, Optional
 from pathlib import Path
 
-from app.models.maintenance_schema import MaintenanceExtraction
-
+from app.models.maintenance_schema import MaintenanceExtraction, DocumentExtraction
 
 class BaseOntologyProvider(ABC):
    
     @abstractmethod
     def get_canonical_name(self, field_name: str, alias: str) -> str:
-        
         pass
 
 
 class JSONOntologyProvider(BaseOntologyProvider):
    
-    
     def __init__(self, ontology_dir: str):
         self.ontology_dir = Path(ontology_dir)
-       
         self._dictionaries: Dict[str, Dict[str, str]] = {}
         self._load_dictionaries()
         
@@ -28,7 +24,6 @@ class JSONOntologyProvider(BaseOntologyProvider):
         if not self.ontology_dir.exists():
             return
             
-      
         file_mapping = {
             "asset_type": "asset_types.json",
             "component": "components.json",
@@ -59,10 +54,8 @@ class JSONOntologyProvider(BaseOntologyProvider):
 
 class OntologyMapper:
     
-    
     def __init__(self, provider: BaseOntologyProvider):
         self.provider = provider
-
         self.mapped_fields = [
             "asset_type",
             "component",
@@ -72,15 +65,17 @@ class OntologyMapper:
             "severity"
         ]
         
-    def map_extraction(self, extraction: MaintenanceExtraction) -> MaintenanceExtraction:
+    def map_extraction(self, document: DocumentExtraction) -> DocumentExtraction:
+        mapped_extractions = []
         
-        updates = {}
-        
-        for field in self.mapped_fields:
-            original_value = getattr(extraction, field, None)
-            if original_value is not None:
-                mapped_value = self.provider.get_canonical_name(field, original_value)
-                updates[field] = mapped_value
-                
-        
-        return extraction.model_copy(update=updates)
+        for extraction in document.extractions:
+            updates = {}
+            for field in self.mapped_fields:
+                original_value = getattr(extraction, field, None)
+                if original_value is not None:
+                    mapped_value = self.provider.get_canonical_name(field, original_value)
+                    updates[field] = mapped_value
+                    
+            mapped_extractions.append(extraction.model_copy(update=updates))
+            
+        return DocumentExtraction(extractions=mapped_extractions)

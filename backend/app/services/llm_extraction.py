@@ -1,12 +1,11 @@
 import json
 from pathlib import Path
 
-from app.models.maintenance_schema import MaintenanceExtraction
+from app.models.maintenance_schema import DocumentExtraction
 from app.config import client
 
 prompt_path = Path("app/prompts/firstprompt.txt")
 async def llm_extractor(document_text: str):
-
     
     prompt = prompt_path.read_text(encoding="utf-8")
 
@@ -14,7 +13,7 @@ async def llm_extractor(document_text: str):
     prompt = prompt.replace("{document_text}", document_text) 
 
     # Ensure the prompt asks for JSON and provide the exact schema
-    schema_str = json.dumps(MaintenanceExtraction.model_json_schema(), indent=2)
+    schema_str = json.dumps(DocumentExtraction.model_json_schema(), indent=2)
     prompt = prompt + f"\n\nRespond ONLY with a valid JSON object matching exactly this JSON Schema:\n{schema_str}"
 
     # Send prompt to Groq via OpenAI compatible API
@@ -25,5 +24,4 @@ async def llm_extractor(document_text: str):
     )
 
     content = response.choices[0].message.content
-    return MaintenanceExtraction.model_validate_json(content)
-    
+    return DocumentExtraction.model_validate_json(content)

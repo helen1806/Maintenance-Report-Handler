@@ -126,3 +126,7 @@ xxhash==3.8.1
 yarl
 zipp==4.1.0
 zstandard==0.25.0
+celery==5.4.0
+redis==5.0.8
+psycopg2-binary==2.9.9
+alembic==1.13.2
