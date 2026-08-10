@@ -21,16 +21,15 @@ def process_maintenance_report(self, file_path: str, filename: str, file_hash: s
     logger.info(f"Starting background extraction for {filename}")
     
     try:
-        # 1. Text Extraction
+        
         with open(file_path, "rb") as f:
             pdf_bytes = f.read()
         text = _parse_pdf_sync(pdf_bytes)
         
-        # 2. LLM Extraction (Async Groq Call)
+        
         structured_data = run_async(llm_extractor(text))
         
-        # 3. Ontology Mapping
-        # Get the absolute path to the ontology folder
+       
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         ontology_dir = os.path.join(base_dir, "ontology")
         mapper = OntologyMapper(JSONOntologyProvider(ontology_dir))

@@ -188,3 +188,17 @@ async def job_status_stream(job_id: str):
             await asyncio.sleep(1)
             
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.get("/api/keep-alive")##because render free serivce is being used.
+def keep_alive():
+    
+    from app.services.neo4jservice import Neo4jService
+    try:
+        service = Neo4jService()
+        with service.driver.session() as session:
+            session.run("MERGE (n:KeepAlive {id: 1}) SET n.lastPing = timestamp()")
+            
+        return {"status": "success", "message": "Render and Neo4j pinged successfully!"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
