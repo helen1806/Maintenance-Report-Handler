@@ -9,6 +9,7 @@ import SuggestionGrid from "../frontcard/SuggestionGrid";
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   const handleSend = async (text: string) => {
     // 1. Add the user's message to the chat
@@ -36,10 +37,18 @@ export default function ChatInterface() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question: text, history }),
+        body: JSON.stringify({ 
+          question: text, 
+          history,
+          conversation_id: conversationId 
+        }),
       });
 
       const data = await response.json();
+
+      if (data.conversation_id && !conversationId) {
+        setConversationId(data.conversation_id);
+      }
 
       let assistantContent = "";
 

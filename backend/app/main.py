@@ -3,6 +3,12 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any, Literal
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.database.postgres import SessionLocal
+from app.models.conversation import Conversation, Message
+import uuid
+
 import os
 import hashlib
 import asyncio
@@ -114,17 +120,63 @@ class ChatMessage(BaseModel):
 class AskRequest(BaseModel):
     question: str
     history: List[ChatMessage] = []
+    conversation_id: Optional[str]=None  ##the first conversation gets no id.
 
 class AskResponse(BaseModel):
     answer: str
     debug: Optional[Dict[str, Any]] = None
+    conversation_id: Optional[str]=None
+
+def get_db():
+    db=SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 @app.post("/ask", response_model=AskResponse)
-async def ask_graph_question(request: AskRequest):
+async def ask_graph_question(request: AskRequest, db:Session = Depends(get_db)):
+
+    if not request.conversation_id:
+        new_conv=Conversation()
+        db.add(new_conv)
+        db.commit()
+        db.refresh(new_conv)
+        current_convo_id=str(new_conv.id)
+
+    else:
+        current_convo_id=request.conversation_id
+
+        # Save the User's question
+    user_message = Message(
+        conversation_id=uuid.UUID(current_convo_id),
+        role="user",
+        content=request.question
+    )
+    db.add(user_message)
+    db.commit()
+
     try:
-        # Offload the blocking Graph QA chain (LLM and Neo4j network calls) to a background thread
+        # Your existing code that gets the answer
         result = await asyncio.to_thread(ask_question, request.question, request.history)
-        return AskResponse(**result)
+        
+        # Save the AI's response!
+        ai_message = Message(
+            conversation_id=uuid.UUID(current_convo_id),
+            role="assistant",
+            content=result["answer"]
+        )
+        db.add(ai_message)
+        db.commit()
+
+        # Update your return statement to include the conversation_id
+        return AskResponse(
+            answer=result["answer"],
+            conversation_id=current_convo_id,
+            debug=result.get("debug")
+        )
+
     except HTTPException as e:
         return JSONResponse(
             status_code=e.status_code,

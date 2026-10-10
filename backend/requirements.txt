@@ -126,3 +126,4 @@ xxhash==3.8.1
 yarl
 zipp==4.1.0
 zstandard==0.25.0
+psycopg[binary]
