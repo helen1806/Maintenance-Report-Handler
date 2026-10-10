@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class MaintenanceExtraction(BaseModel):
     asset: str
@@ -11,3 +11,6 @@ class MaintenanceExtraction(BaseModel):
     maintenance_action: Optional[str] = None
     location: Optional[str] = None
     confidence: Optional[float] = None
+
+class DocumentExtraction(BaseModel):
+    extractions: List[MaintenanceExtraction]

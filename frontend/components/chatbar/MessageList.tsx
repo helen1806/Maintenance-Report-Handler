@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Message as MessageType } from "@/types/chat";
 import Message from "./Message";
 import { Loader2 } from "lucide-react";
@@ -12,10 +12,22 @@ interface MessageListProps {
 
 export default function MessageList({ messages, isLoading }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [loadingText, setLoadingText] = useState("Thinking...");
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
+  }, [messages, isLoading, loadingText]);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (isLoading) {
+      setLoadingText("Thinking...");
+      timeout = setTimeout(() => {
+        setLoadingText("Waking up the server... (This first request can take up to 3 minutes, please hold on!)");
+      }, 5000);
+    }
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth">
@@ -32,7 +44,7 @@ export default function MessageList({ messages, isLoading }: MessageListProps) {
               </div>
               <div className="flex flex-col items-start justify-center">
                 <div className="rounded-2xl px-5 py-3 shadow-sm bg-white border border-gray-200 text-gray-500 italic rounded-tl-none">
-                  Thinking...
+                  {loadingText}
                 </div>
               </div>
             </div>

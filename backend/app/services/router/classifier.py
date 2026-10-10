@@ -1,28 +1,45 @@
+import os
 import logging
-from app.services.router.semantic_router_service import get_route_layer
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import PromptTemplate
 
 logger = logging.getLogger(__name__)
+
+ROUTE_PROMPT = """Classify the following user question into exactly ONE of these four categories:
+- "ChitChat": Simple greetings like hi, hello, how are you.
+- "Help": Questions asking how to use the app or what it does.
+- "General": General knowledge questions about engineering, rust, pumps, etc.
+- "Graph": Specific questions about maintenance reports, assets, failure causes, or anything requiring a database search.
+
+User Question: {question}
+
+Respond ONLY with the exact category name (ChitChat, Help, General, or Graph) and nothing else.
+"""
 
 def classify(question: str) -> str:
     """
     Takes a user question and returns the name of the route (intent).
-    Hides the underlying semantic-router implementation from the rest of the application.
     """
     try:
-        # Get the lazy-loaded router instance
-        route_layer = get_route_layer()
-        # The semantic router returns a Route object
-        result = route_layer(question)
+        llm = ChatOpenAI(
+            model="llama-3.3-70b-versatile",
+            api_key=os.getenv("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1",
+            temperature=0,
+        )
+        prompt = PromptTemplate(
+            template=ROUTE_PROMPT, input_variables=["question"]
+        )
+        chain = prompt | llm
         
-        # result.name will be one of our defined routes (e.g., "Graph", "General", "ChitChat")
-        # If the question is completely out of scope, result.name might be None, so we provide a fallback.
-        if result and result.name:
-            return result.name
+        result = chain.invoke({"question": question})
+        category = result.content.strip()
+        
+        if category in ["ChitChat", "Help", "General", "Graph"]:
+            return category
         else:
-            logger.warning(f"No confident route matched for: '{question}'. Defaulting to 'General'.")
             return "General"
             
     except Exception as e:
-        logger.error(f"Error in semantic router classification: {e}")
-        # Fail gracefully so the application doesn't crash
+        logger.error(f"Error in LLM classification: {e}")
         return "General"
