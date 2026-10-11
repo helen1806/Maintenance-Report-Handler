@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(find_dotenv())
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
@@ -7,6 +10,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not configured.")
+
+DATABASE_URL = DATABASE_URL.strip("'\"")
+
 
 # Use the Psycopg 3 PostgreSQL driver.
 if DATABASE_URL.startswith("postgresql://"):
